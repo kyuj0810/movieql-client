@@ -52,20 +52,41 @@ const Image = styled.div`
 	background-position: center center;
 	border-radius: 7px;
 `;
-
+/**
+ * Fragment : 타입의 일부
+ * writeFragment : 사용하여 캐시된 데이터에 대한 변경 사항은 graphQL서버에 푸시되지 않음
+ * 환경을 다시 로드하면 이러한 변경 사항은 사라진다.
+ */
 export default function Movie() {
 	const { id } = useParams();
-	const { data, loading, error } = useQuery(GET_MOVIE, {
+	const {
+		data,
+		loading,
+		client: { cache },
+	} = useQuery(GET_MOVIE, {
 		variables: {
 			movieId: id,
 		},
 	});
-
+	const onClick = () => {
+		cache.writeFragment({
+			id: `Movie:${id}`,
+			fragment: gql`
+				fragment MovieFragment on Movie {
+					isLiked
+				}
+			`,
+			data: {
+				isLiked: !data.movie.isLiked,
+			},
+		});
+	};
 	return (
 		<Container>
 			<Column>
 				<Title>{loading ? "Loading..." : `${data.movie?.title}`}</Title>
 				<Subtitle>⭐️ {data?.movie?.rating}</Subtitle>
+				<button onClick={onClick}>{data?.movie?.isLiked ? "Unlike" : "Like"}</button>
 			</Column>
 			<Image bg={data?.movie?.medium_cover_image} />
 		</Container>
